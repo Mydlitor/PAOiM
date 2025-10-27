@@ -50,5 +50,12 @@ public class Main {
 
     System.out.println("\nEmpty stables:");
     for (Stable s : manager.findEmpty()) System.out.println(s.getStableName());
+
+
+    north.changeCondition(h3, HorseCondition.QUARANTINE);
+
+    System.out.println("\nsick horses: ");
+    for(Horse h : north.getQuarantinedHorses() ) System.out.println(h);
+
   }
 }

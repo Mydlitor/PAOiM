@@ -77,6 +77,10 @@ public class Stable {
     return horseList.stream().filter(h -> h.getName().toLowerCase().contains(low) || h.getBreed().toLowerCase().contains(low)).collect(Collectors.toList());
   }
 
+  public List<Horse> getQuarantinedHorses() {
+    return horseList.stream().filter(h -> h.getCondition().equals(HorseCondition.QUARANTINE)).toList();
+  }
+
   public void summary() {
     System.out.printf("Summary for '%s' (%d/%d):%n", stableName, horseList.size(), maxCapacity);
     for (Horse h : horseList) h.print();
