@@ -1,3 +1,6 @@
+package pl.edu.pao.model;
+
+import pl.edu.pao.exceptions.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,40 +19,45 @@ public class Stable {
   public int getMaxCapacity() { return maxCapacity; }
   public List<Horse> getHorseList() { return Collections.unmodifiableList(horseList); }
 
-  public void addHorse(Horse horse) {
+  public void addHorse(Horse horse) throws DuplicateHorseException, StableCapacityException {
     if (horseList.contains(horse)) {
-      System.out.printf("Horse already exists in '%s': %s%n", stableName, horse.getName());
-      return;
+      throw new DuplicateHorseException(horse.getName(), stableName);
     }
     if (horseList.size() >= maxCapacity) {
-      System.err.printf("Cannot add horse '%s' — capacity exceeded in '%s'.%n", horse.getName(), stableName);
-      return;
+      throw new StableCapacityException(stableName, maxCapacity);
     }
     horseList.add(horse);
   }
 
-  public boolean removeHorse(Horse horse) { return horseList.remove(horse); }
+  public void removeHorse(Horse horse) throws HorseNotFoundException {
+    if (!horseList.remove(horse)) {
+      throw new HorseNotFoundException(horse.getName());
+    }
+  }
 
-  public boolean sickHorse(Horse horse) {
+  public void sickHorse(Horse horse) throws HorseNotFoundException {
     int idx = horseList.indexOf(horse);
-    if (idx == -1) return false;
+    if (idx == -1) {
+      throw new HorseNotFoundException(horse.getName());
+    }
     horseList.get(idx).setCondition(HorseCondition.SICK);
     horseList.remove(idx);
-    return true;
   }
 
-  public boolean changeCondition(Horse horse, HorseCondition condition) {
+  public void changeCondition(Horse horse, HorseCondition condition) throws HorseNotFoundException {
     int idx = horseList.indexOf(horse);
-    if (idx == -1) return false;
+    if (idx == -1) {
+      throw new HorseNotFoundException(horse.getName());
+    }
     horseList.get(idx).setCondition(condition);
-    return true;
   }
 
-  public boolean changeWeight(Horse horse, double kg) {
+  public void changeWeight(Horse horse, double kg) throws HorseNotFoundException {
     int idx = horseList.indexOf(horse);
-    if (idx == -1) return false;
+    if (idx == -1) {
+      throw new HorseNotFoundException(horse.getName());
+    }
     horseList.get(idx).setWeightKg(kg);
-    return true;
   }
 
   public long countByStatus(HorseCondition condition) {

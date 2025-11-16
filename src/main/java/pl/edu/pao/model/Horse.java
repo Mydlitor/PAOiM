@@ -1,3 +1,5 @@
+package pl.edu.pao.model;
+
 import java.util.Comparator;
 import java.util.Objects;
 

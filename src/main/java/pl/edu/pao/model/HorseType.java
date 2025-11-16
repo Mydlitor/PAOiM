@@ -1,3 +1,5 @@
+package pl.edu.pao.model;
+
 public enum HorseType {
   COLD_BLOODED {
     @Override public String toString() { return "cold-blooded"; }
