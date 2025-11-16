@@ -18,7 +18,6 @@ A JavaFX application for managing horse stables with admin and user interfaces.
 - Search horses by name
 - Filter horses by condition
 - Sort horses by name or price
-- Request contact information
 
 ## Architecture
 

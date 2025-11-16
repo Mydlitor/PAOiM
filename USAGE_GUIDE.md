@@ -68,7 +68,6 @@ The user view is similar to admin view but read-only:
    - View-only table
    - Search and filter controls (same as admin)
    - Sort buttons (same as admin)
-   - "Request Contact Info" button
 
 ### Operations
 
@@ -80,13 +79,6 @@ The user view is similar to admin view but read-only:
 - Type in search field to filter horses by name
 - Select condition from dropdown to filter by status
 - Works the same as admin view
-
-#### Requesting Contact
-1. Select a horse from the table
-2. Click "Request Contact Info"
-3. Information dialog shows:
-   - Message that request was sent
-   - Horse details (name, breed, age, price)
 
 ## Error Handling
 

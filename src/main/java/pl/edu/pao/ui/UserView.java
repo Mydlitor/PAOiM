@@ -177,13 +177,11 @@ public class UserView {
         HBox buttonBox = new HBox(10);
         Button sortNameButton = new Button("Sort by Name");
         Button sortPriceButton = new Button("Sort by Price");
-        Button contactButton = new Button("Request Contact Info");
         
         sortNameButton.setOnAction(e -> sortHorsesByName());
         sortPriceButton.setOnAction(e -> sortHorsesByPrice());
-        contactButton.setOnAction(e -> requestContact());
         
-        buttonBox.getChildren().addAll(sortNameButton, sortPriceButton, contactButton);
+        buttonBox.getChildren().addAll(sortNameButton, sortPriceButton);
         
         vbox.getChildren().addAll(label, filterBox, horseTable, buttonBox);
         VBox.setVgrow(horseTable, Priority.ALWAYS);
@@ -252,28 +250,6 @@ public class UserView {
         } catch (Exception e) {
             showError(e.getMessage());
         }
-    }
-    
-    private void requestContact() {
-        Horse selected = horseTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showError("Please select a horse first");
-            return;
-        }
-        
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Contact Request");
-        alert.setHeaderText("Request Sent");
-        alert.setContentText(String.format(
-            "Your request for contact information about '%s' has been sent to the admin. " +
-            "You will be contacted shortly.\n\nHorse Details:\n" +
-            "Breed: %s\nAge: %d years\nPrice: %.2f PLN",
-            selected.getName(),
-            selected.getBreed(),
-            selected.getAge(),
-            selected.getPrice()
-        ));
-        alert.showAndWait();
     }
     
     private void showError(String message) {
