@@ -1,3 +1,5 @@
+package pl.edu.pao.model;
+
 public enum HorseCondition {
   HEALTHY {
     @Override public String toString() { return "healthy"; }
