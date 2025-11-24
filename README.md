@@ -81,7 +81,7 @@ mvn javafx:run
 src/
 ├── main/
 │   └── java/
-│       └── pl/edu/pao/
+│       └── pao/
 │           ├── Main.java                    # JavaFX Application entry point
 │           ├── exceptions/                   # Custom exceptions
 │           │   ├── StableException.java
@@ -107,7 +107,7 @@ src/
 │               └── UserView.java
 └── test/
     └── java/
-        └── pl/edu/pao/
+        └── pao/
             ├── model/                       # Model tests
             │   ├── HorseTest.java
             │   ├── StableTest.java
