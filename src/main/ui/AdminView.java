@@ -692,12 +692,10 @@ public class AdminView {
         
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            try {
-                // Create a custom CSV export for the selected stable
-                java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(file));
+            try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(file))) {
                 writer.write("Stable Information");
                 writer.newLine();
-                writer.write("Name," + selected.getStableName());
+                writer.write("Name," + escapeCSV(selected.getStableName()));
                 writer.newLine();
                 writer.write("Capacity," + selected.getMaxCapacity());
                 writer.newLine();
@@ -711,16 +709,15 @@ public class AdminView {
                 
                 for (Horse horse : selected.getHorseList()) {
                     writer.write(String.format("%s,%s,%s,%s,%d,%.2f,%.2f",
-                        horse.getName(),
-                        horse.getBreed(),
-                        horse.getType(),
-                        horse.getCondition(),
+                        escapeCSV(horse.getName()),
+                        escapeCSV(horse.getBreed()),
+                        escapeCSV(horse.getType().toString()),
+                        escapeCSV(horse.getCondition().toString()),
                         horse.getAge(),
                         horse.getPrice(),
                         horse.getWeightKg()));
                     writer.newLine();
                 }
-                writer.close();
                 
                 showInfo("Success", "Selected stable exported to: " + file.getName());
             } catch (IOException e) {
@@ -766,6 +763,17 @@ public class AdminView {
                 showError("Import failed: " + e.getMessage());
             }
         }
+    }
+    
+    // Helper method for CSV escaping
+    private String escapeCSV(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
     
     private void showError(String message) {
