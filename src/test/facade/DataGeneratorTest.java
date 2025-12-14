@@ -2,6 +2,7 @@ package facade;
 
 import org.junit.jupiter.api.*;
 import exceptions.StableException;
+import util.TestDatabaseUtil;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DataGeneratorTest {
@@ -10,6 +11,7 @@ class DataGeneratorTest {
     
     @BeforeEach
     void setUp() {
+        TestDatabaseUtil.clearDatabase();
         generator = DataGenerator.getInstance();
         facade = new StableFacade();
     }

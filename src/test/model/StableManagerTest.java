@@ -2,6 +2,7 @@ package model;
 
 import org.junit.jupiter.api.*;
 import exceptions.*;
+import util.TestDatabaseUtil;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,6 +11,7 @@ class StableManagerTest {
     
     @BeforeEach
     void setUp() {
+        TestDatabaseUtil.clearDatabase();
         manager = new StableManager();
     }
     
@@ -68,6 +70,10 @@ class StableManagerTest {
         Horse horse = new Horse("Test", "Arabian", HorseType.HOT_BLOODED, HorseCondition.HEALTHY, 5, 10000.0, 400.0);
         fullStable.addHorse(horse);
         
+        // Persist the changes
+        dao.StableDAO stableDAO = new dao.StableDAOImpl();
+        stableDAO.update(fullStable);
+        
         List<Stable> empty = manager.findEmpty();
         assertEquals(2, empty.size());
     }
@@ -100,6 +106,11 @@ class StableManagerTest {
         half.addHorse(h1);
         half.addHorse(h2); // 50% load
         full.addHorse(h3); // 50% load
+        
+        // Persist the changes
+        dao.StableDAO stableDAO = new dao.StableDAOImpl();
+        stableDAO.update(half);
+        stableDAO.update(full);
         
         List<Stable> sorted = manager.sortStablesByLoad();
         assertEquals(3, sorted.size());

@@ -3,6 +3,7 @@ package facade;
 import org.junit.jupiter.api.*;
 import exceptions.*;
 import model.*;
+import util.TestDatabaseUtil;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,6 +12,7 @@ class StableFacadeTest {
     
     @BeforeEach
     void setUp() {
+        TestDatabaseUtil.clearDatabase();
         facade = new StableFacade();
     }
     

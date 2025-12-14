@@ -1,7 +1,15 @@
 package facade;
 
+import dao.HorseDAO;
+import dao.HorseDAOImpl;
+import dao.StableDAO;
+import dao.StableDAOImpl;
 import exceptions.*;
 import model.*;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import util.HibernateUtil;
+
 import java.util.List;
 
 /**
@@ -9,9 +17,13 @@ import java.util.List;
  */
 public class StableFacade {
     private final StableManager stableManager;
+    private final StableDAO stableDAO;
+    private final HorseDAO horseDAO;
 
     public StableFacade() {
         this.stableManager = new StableManager();
+        this.stableDAO = new StableDAOImpl();
+        this.horseDAO = new HorseDAOImpl();
     }
 
     // Stable operations
@@ -43,18 +55,62 @@ public class StableFacade {
     public void addHorseToStable(String stableName, String horseName, String breed, 
                                   HorseType type, HorseCondition condition, 
                                   int age, double price, double weight) throws StableException {
-        Stable stable = stableManager.getStable(stableName);
-        Horse horse = new Horse(horseName, breed, type, condition, age, price, weight);
-        stable.addHorse(horse);
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            
+            Stable stable = stableDAO.findByName(stableName);
+            if (stable == null) {
+                throw new StableNotFoundException(stableName);
+            }
+            
+            Horse horse = new Horse(horseName, breed, type, condition, age, price, weight);
+            stable.addHorse(horse);
+            
+            session.update(stable);
+            transaction.commit();
+        } catch (StableException e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw e;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw new RuntimeException("Error adding horse: " + e.getMessage(), e);
+        }
     }
 
     public void removeHorseFromStable(String stableName, String horseName) throws StableException {
-        Stable stable = stableManager.getStable(stableName);
-        Horse horse = stable.search(horseName);
-        if (horse == null) {
-            throw new HorseNotFoundException(horseName);
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            
+            Stable stable = stableDAO.findByName(stableName);
+            if (stable == null) {
+                throw new StableNotFoundException(stableName);
+            }
+            
+            Horse horse = stable.search(horseName);
+            if (horse == null) {
+                throw new HorseNotFoundException(horseName);
+            }
+            
+            stable.removeHorse(horse);
+            session.update(stable);
+            transaction.commit();
+        } catch (StableException e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw e;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw new RuntimeException("Error removing horse: " + e.getMessage(), e);
         }
-        stable.removeHorse(horse);
     }
 
     public List<Horse> getHorsesInStable(String stableName) throws StableException {
@@ -85,20 +141,64 @@ public class StableFacade {
     }
 
     public void changeHorseCondition(String stableName, String horseName, HorseCondition condition) throws StableException {
-        Stable stable = stableManager.getStable(stableName);
-        Horse horse = stable.search(horseName);
-        if (horse == null) {
-            throw new HorseNotFoundException(horseName);
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            
+            Stable stable = stableDAO.findByName(stableName);
+            if (stable == null) {
+                throw new StableNotFoundException(stableName);
+            }
+            
+            Horse horse = stable.search(horseName);
+            if (horse == null) {
+                throw new HorseNotFoundException(horseName);
+            }
+            
+            stable.changeCondition(horse, condition);
+            session.update(stable);
+            transaction.commit();
+        } catch (StableException e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw e;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw new RuntimeException("Error changing horse condition: " + e.getMessage(), e);
         }
-        stable.changeCondition(horse, condition);
     }
 
     public void changeHorseWeight(String stableName, String horseName, double weight) throws StableException {
-        Stable stable = stableManager.getStable(stableName);
-        Horse horse = stable.search(horseName);
-        if (horse == null) {
-            throw new HorseNotFoundException(horseName);
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            
+            Stable stable = stableDAO.findByName(stableName);
+            if (stable == null) {
+                throw new StableNotFoundException(stableName);
+            }
+            
+            Horse horse = stable.search(horseName);
+            if (horse == null) {
+                throw new HorseNotFoundException(horseName);
+            }
+            
+            stable.changeWeight(horse, weight);
+            session.update(stable);
+            transaction.commit();
+        } catch (StableException e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw e;
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            throw new RuntimeException("Error changing horse weight: " + e.getMessage(), e);
         }
-        stable.changeWeight(horse, weight);
     }
 }
