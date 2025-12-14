@@ -16,3 +16,5 @@ build/
 *.db
 stable_db.mv.db
 stable_db.trace.db
+demo_*.csv
+demo_*.ser

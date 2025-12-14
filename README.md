@@ -1,6 +1,18 @@
-# Stable Manager - Lab 3
+# Stable Manager - Lab 3 & Lab 4
 
-A JavaFX application for managing horse stables with admin and user interfaces.
+A JavaFX application for managing horse stables with admin and user interfaces, now featuring Hibernate ORM integration with persistent database storage.
+
+## Latest Updates (Lab 4)
+
+### Hibernate ORM Integration
+- **Database**: H2 persistent database replacing in-memory storage
+- **ORM**: Hibernate 5.6.15.Final with JPA annotations
+- **Entities**: Horse, Stable, Rating with bidirectional relationships
+- **DAO Pattern**: Complete DAO layer for all entities
+- **Services**: Serialization, CSV import/export, Rating statistics
+- **Testing**: 50 comprehensive tests (all passing)
+
+See [LAB04_IMPLEMENTATION.md](LAB04_IMPLEMENTATION.md) for detailed documentation.
 
 ## Features
 
@@ -45,11 +57,38 @@ A JavaFX application for managing horse stables with admin and user interfaces.
 mvn clean compile
 ```
 
+## Running the Application
+
+### JavaFX UI
+```bash
+mvn javafx:run
+```
+
+### Demo Application (Lab 04)
+To see Hibernate ORM features in action:
+```bash
+mvn clean compile
+java -cp "target/classes:$(mvn dependency:build-classpath -DincludeScope=compile -q -Dmdep.outputFile=/dev/stdout)" demo.HibernateDemo
+```
+
+This demonstrates:
+- DAO Pattern CRUD operations
+- Bidirectional entity relationships
+- HQL queries
+- Rating entity and Criteria API statistics
+- CSV export functionality
+- Binary serialization
+
 ## Running Tests
 
 ```bash
 mvn test
 ```
+
+All 50 tests pass:
+- Model tests: 33 tests
+- Facade tests: 12 tests
+- Service tests: 5 tests
 
 ## Running with Code Coverage
 
@@ -148,12 +187,15 @@ The application automatically generates sample data on startup:
 
 - **Java 17**
 - **JavaFX 17.0.2** - UI framework
+- **Hibernate 5.6.15.Final** - ORM framework
+- **H2 Database 2.1.214** - Embedded database
 - **JUnit 5.9.2** - Testing
 - **JaCoCo 0.8.8** - Code coverage
 - **Maven** - Build tool
 
 ## Lab Requirements Met
 
+### Lab 3
 ✅ JavaFX UI with login, admin, and user modules  
 ✅ Separation of concerns (Model-View-Facade)  
 ✅ Custom checked exceptions (not Runtime)  
@@ -164,7 +206,18 @@ The application automatically generates sample data on startup:
 ✅ Search and filter functionality  
 ✅ Sort functionality  
 ✅ JUnit tests with 70%+ code coverage  
-✅ Proper exception handling throughout  
+
+### Lab 4
+✅ **Database Schema with Hibernate**  
+✅ **DAO Pattern Implementation**  
+✅ **Serialization Functionality**  
+✅ **CSV Import/Export**  
+✅ **Refactored to use Database**  
+✅ **HQL Queries**  
+✅ **Criteria API Usage**  
+✅ **Maven Configuration**  
+
+See [LAB04_IMPLEMENTATION.md](LAB04_IMPLEMENTATION.md) for detailed Lab 4 implementation.  
 
 ## Notes
 
