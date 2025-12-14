@@ -574,11 +574,13 @@ public class AdminView {
         if (file != null) {
             try {
                 Stable stable = serializationService.loadStable(file.getAbsolutePath());
-                // Add to database via facade
+                // Note: Only stable metadata is restored, not the horses
+                // For full restoration including horses, use CSV import instead
                 facade.addStable(stable.getStableName(), stable.getMaxCapacity());
                 // Reload UI
                 loadStables();
-                showInfo("Success", "Stable loaded from: " + file.getName());
+                showInfo("Success", "Stable loaded from: " + file.getName() + 
+                         "\nNote: Only stable metadata restored. Use CSV import to restore horses.");
             } catch (IOException | ClassNotFoundException e) {
                 showError("Load failed: " + e.getMessage());
             } catch (StableException e) {
@@ -618,17 +620,32 @@ public class AdminView {
         if (file != null) {
             try {
                 List<Stable> stables = serializationService.loadStables(file.getAbsolutePath());
+                int successCount = 0;
+                int failCount = 0;
+                StringBuilder errors = new StringBuilder();
+                
                 // Add all stables to database
                 for (Stable stable : stables) {
                     try {
                         facade.addStable(stable.getStableName(), stable.getMaxCapacity());
+                        successCount++;
                     } catch (StableException e) {
-                        // Stable might already exist, continue with next
+                        failCount++;
+                        errors.append("\n- ").append(stable.getStableName()).append(": ").append(e.getMessage());
                     }
                 }
+                
                 // Reload UI
                 loadStables();
-                showInfo("Success", "Loaded " + stables.size() + " stables from: " + file.getName());
+                
+                // Show result with details
+                String message = String.format("Loaded %d stables from: %s", successCount, file.getName());
+                if (failCount > 0) {
+                    message += String.format("\n%d stables failed to load:%s", failCount, errors.toString());
+                    showError(message);
+                } else {
+                    showInfo("Success", message);
+                }
             } catch (IOException | ClassNotFoundException e) {
                 showError("Load failed: " + e.getMessage());
             }
