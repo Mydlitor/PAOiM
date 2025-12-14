@@ -37,4 +37,23 @@ class DataGeneratorTest {
         var horses = facade.getHorsesInStable("North Farm");
         assertTrue(horses.size() > 0);
     }
+    
+    @Test
+    @DisplayName("Test repeated data generation does not throw exception")
+    void testRepeatedGenerateSampleData() throws StableException {
+        // Generate sample data first time
+        generator.generateSampleData(facade);
+        
+        // Check that stables were created
+        var stables = facade.getAllStables();
+        int initialStableCount = stables.size();
+        assertTrue(initialStableCount >= 4);
+        
+        // Generate sample data again - should not throw exception
+        assertDoesNotThrow(() -> generator.generateSampleData(facade));
+        
+        // Verify data wasn't duplicated
+        var stablesAfter = facade.getAllStables();
+        assertEquals(initialStableCount, stablesAfter.size());
+    }
 }
