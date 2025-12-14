@@ -19,9 +19,12 @@ public class DataGenerator {
     }
     
     public void generateSampleData(StableFacade facade) throws StableException {
-        // Check if sample data already exists
-        if (!facade.getAllStables().isEmpty()) {
-            return; // Sample data already generated
+        // Check if sample data already exists by looking for one of the sample stables
+        try {
+            facade.getStable("North Farm");
+            return; // Sample data already exists
+        } catch (StableException e) {
+            // North Farm doesn't exist, proceed with data generation
         }
         
         // Add stables

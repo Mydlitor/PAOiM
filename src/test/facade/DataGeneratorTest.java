@@ -56,4 +56,21 @@ class DataGeneratorTest {
         var stablesAfter = facade.getAllStables();
         assertEquals(initialStableCount, stablesAfter.size());
     }
+    
+    @Test
+    @DisplayName("Test data generation with other stables present")
+    void testGenerateDataWithOtherStables() throws StableException {
+        // Add a different stable first
+        facade.addStable("My Custom Stable", 7);
+        
+        // Generate sample data - should still work since "North Farm" doesn't exist
+        assertDoesNotThrow(() -> generator.generateSampleData(facade));
+        
+        // Verify both the custom stable and sample data exist
+        assertDoesNotThrow(() -> facade.getStable("My Custom Stable"));
+        assertDoesNotThrow(() -> facade.getStable("North Farm"));
+        
+        var stables = facade.getAllStables();
+        assertTrue(stables.size() >= 5); // 1 custom + 4 sample stables
+    }
 }
