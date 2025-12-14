@@ -565,6 +565,12 @@ public class AdminView {
         }
     }
     
+    /**
+     * Load a stable from a binary file.
+     * Note: Due to facade limitations, only stable metadata (name and capacity) is restored.
+     * The horses that were part of the stable are not restored to the database.
+     * Use CSV import to restore both stables and horses.
+     */
     private void loadStableBinary() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Load Stable (Binary)");
@@ -576,13 +582,11 @@ public class AdminView {
         if (file != null) {
             try {
                 Stable stable = serializationService.loadStable(file.getAbsolutePath());
-                // Note: Only stable metadata is restored, not the horses
-                // For full restoration including horses, use CSV import instead
                 facade.addStable(stable.getStableName(), stable.getMaxCapacity());
-                // Reload UI
                 loadStables();
-                showInfo("Success", "Stable loaded from: " + file.getName() + 
-                         "\nNote: Only stable metadata restored. Use CSV import to restore horses.");
+                String message = String.format("Stable loaded from: %s%nNote: Only stable metadata restored. Use CSV import to restore horses.", 
+                                               file.getName());
+                showInfo("Success", message);
             } catch (IOException | ClassNotFoundException e) {
                 showError("Load failed: " + e.getMessage());
             } catch (StableException e) {
@@ -642,7 +646,7 @@ public class AdminView {
                 
                 // Show result with details
                 if (failCount > 0) {
-                    String message = String.format("Loaded %d stables, %d failed from: %s%s", 
+                    String message = String.format("Loaded %d stables, %d failed from: %s%n%s", 
                                                     successCount, failCount, file.getName(), errors.toString());
                     Alert alert = new Alert(Alert.AlertType.WARNING);
                     alert.setTitle("Partial Success");
