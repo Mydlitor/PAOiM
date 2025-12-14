@@ -7,11 +7,18 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import exceptions.StableException;
 import facade.StableFacade;
 import model.*;
+import service.CSVService;
+import service.SerializationService;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +28,8 @@ import java.util.Optional;
 public class AdminView {
     private final Stage stage;
     private final StableFacade facade;
+    private final SerializationService serializationService;
+    private final CSVService csvService;
     private TableView<Stable> stableTable;
     private TableView<Horse> horseTable;
     private ObservableList<Stable> stableData;
@@ -30,6 +39,8 @@ public class AdminView {
     public AdminView(Stage stage, StableFacade facade) {
         this.stage = stage;
         this.facade = facade;
+        this.serializationService = new SerializationService();
+        this.csvService = new CSVService();
         this.stableData = FXCollections.observableArrayList();
         this.horseData = FXCollections.observableArrayList();
     }
@@ -39,6 +50,9 @@ public class AdminView {
         
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
+        
+        // Menu Bar
+        MenuBar menuBar = createMenuBar();
         
         // Top - Title and Logout
         HBox topBox = new HBox(10);
@@ -53,7 +67,10 @@ public class AdminView {
             loginView.show();
         });
         topBox.getChildren().addAll(titleLabel, spacer, logoutButton);
-        root.setTop(topBox);
+        
+        VBox topContainer = new VBox();
+        topContainer.getChildren().addAll(menuBar, topBox);
+        root.setTop(topContainer);
         
         // Center - Tables
         SplitPane splitPane = new SplitPane();
@@ -473,6 +490,317 @@ public class AdminView {
         } catch (Exception e) {
             showError(e.getMessage());
         }
+    }
+    
+    private MenuBar createMenuBar() {
+        MenuBar menuBar = new MenuBar();
+        
+        // File Menu
+        Menu fileMenu = new Menu("File");
+        
+        // Serialization submenu
+        Menu serializationMenu = new Menu("Binary Serialization");
+        MenuItem saveStableItem = new MenuItem("Save Stable (Binary)");
+        MenuItem loadStableItem = new MenuItem("Load Stable (Binary)");
+        MenuItem saveAllStablesItem = new MenuItem("Save All Stables (Binary)");
+        MenuItem loadAllStablesItem = new MenuItem("Load All Stables (Binary)");
+        
+        saveStableItem.setOnAction(e -> saveStableBinary());
+        loadStableItem.setOnAction(e -> loadStableBinary());
+        saveAllStablesItem.setOnAction(e -> saveAllStablesBinary());
+        loadAllStablesItem.setOnAction(e -> loadAllStablesBinary());
+        
+        serializationMenu.getItems().addAll(saveStableItem, loadStableItem, 
+                                            new SeparatorMenuItem(),
+                                            saveAllStablesItem, loadAllStablesItem);
+        
+        // CSV submenu
+        Menu csvMenu = new Menu("CSV Export/Import");
+        MenuItem exportStablesItem = new MenuItem("Export Stables to CSV");
+        MenuItem exportHorsesItem = new MenuItem("Export Horses to CSV");
+        MenuItem exportSelectedStableItem = new MenuItem("Export Selected Stable to CSV");
+        MenuItem importStablesItem = new MenuItem("Import Stables from CSV");
+        MenuItem importHorsesItem = new MenuItem("Import Horses from CSV");
+        
+        exportStablesItem.setOnAction(e -> exportStablesToCSV());
+        exportHorsesItem.setOnAction(e -> exportHorsesToCSV());
+        exportSelectedStableItem.setOnAction(e -> exportSelectedStableToCSV());
+        importStablesItem.setOnAction(e -> importStablesFromCSV());
+        importHorsesItem.setOnAction(e -> importHorsesFromCSV());
+        
+        csvMenu.getItems().addAll(exportStablesItem, exportHorsesItem, exportSelectedStableItem,
+                                  new SeparatorMenuItem(),
+                                  importStablesItem, importHorsesItem);
+        
+        fileMenu.getItems().addAll(serializationMenu, csvMenu);
+        menuBar.getMenus().add(fileMenu);
+        
+        return menuBar;
+    }
+    
+    // Binary Serialization Methods
+    
+    private void saveStableBinary() {
+        Stable selected = stableTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showError("Please select a stable to save");
+            return;
+        }
+        
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Stable (Binary)");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Binary Files", "*.ser")
+        );
+        fileChooser.setInitialFileName(selected.getStableName() + ".ser");
+        
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                serializationService.saveStable(selected, file.getAbsolutePath());
+                showInfo("Success", "Stable saved to: " + file.getName());
+            } catch (IOException e) {
+                showError("Save failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Load a stable from a binary file.
+     * Note: Due to facade limitations, only stable metadata (name and capacity) is restored.
+     * The horses that were part of the stable are not restored to the database.
+     * Use CSV import to restore both stables and horses.
+     */
+    private void loadStableBinary() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load Stable (Binary)");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Binary Files", "*.ser")
+        );
+        
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            try {
+                Stable stable = serializationService.loadStable(file.getAbsolutePath());
+                facade.addStable(stable.getStableName(), stable.getMaxCapacity());
+                loadStables();
+                String message = String.format("Stable loaded from: %s%nNote: Only stable metadata restored. Use CSV import to restore horses.", 
+                                               file.getName());
+                showInfo("Success", message);
+            } catch (IOException | ClassNotFoundException e) {
+                showError("Load failed: " + e.getMessage());
+            } catch (StableException e) {
+                showError("Error adding stable: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void saveAllStablesBinary() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save All Stables (Binary)");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Binary Files", "*.ser")
+        );
+        fileChooser.setInitialFileName("all_stables.ser");
+        
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                List<Stable> allStables = facade.getAllStables();
+                serializationService.saveStables(allStables, file.getAbsolutePath());
+                showInfo("Success", "All stables saved to: " + file.getName());
+            } catch (IOException e) {
+                showError("Save failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void loadAllStablesBinary() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load All Stables (Binary)");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Binary Files", "*.ser")
+        );
+        
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            try {
+                List<Stable> stables = serializationService.loadStables(file.getAbsolutePath());
+                int successCount = 0;
+                int failCount = 0;
+                StringBuilder errors = new StringBuilder();
+                
+                // Add all stables to database
+                for (Stable stable : stables) {
+                    try {
+                        facade.addStable(stable.getStableName(), stable.getMaxCapacity());
+                        successCount++;
+                    } catch (StableException e) {
+                        failCount++;
+                        errors.append("\n- ").append(stable.getStableName()).append(": ").append(e.getMessage());
+                    }
+                }
+                
+                // Reload UI
+                loadStables();
+                
+                // Show result with details
+                if (failCount > 0) {
+                    String message = String.format("Loaded %d stables, %d failed from: %s%n%s", 
+                                                    successCount, failCount, file.getName(), errors.toString());
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Partial Success");
+                    alert.setHeaderText(null);
+                    alert.setContentText(message);
+                    alert.showAndWait();
+                } else {
+                    showInfo("Success", String.format("Loaded %d stables from: %s", successCount, file.getName()));
+                }
+            } catch (IOException | ClassNotFoundException e) {
+                showError("Load failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    // CSV Export/Import Methods
+    
+    private void exportStablesToCSV() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Stables to CSV");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialFileName("stables.csv");
+        
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                csvService.exportStablesToCSV(file.getAbsolutePath());
+                showInfo("Success", "Stables exported to: " + file.getName());
+            } catch (IOException e) {
+                showError("Export failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void exportHorsesToCSV() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Horses to CSV");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialFileName("horses.csv");
+        
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                csvService.exportHorsesToCSV(file.getAbsolutePath());
+                showInfo("Success", "Horses exported to: " + file.getName());
+            } catch (IOException e) {
+                showError("Export failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void exportSelectedStableToCSV() {
+        Stable selected = stableTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showError("Please select a stable to export");
+            return;
+        }
+        
+        // Export selected stable and its horses
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Selected Stable to CSV");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialFileName(selected.getStableName() + "_export.csv");
+        
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                writer.write("Stable Information");
+                writer.newLine();
+                writer.write("Name," + escapeCSV(selected.getStableName()));
+                writer.newLine();
+                writer.write("Capacity," + selected.getMaxCapacity());
+                writer.newLine();
+                writer.write("Current Load," + selected.getHorseList().size());
+                writer.newLine();
+                writer.newLine();
+                writer.write("Horses in this stable:");
+                writer.newLine();
+                writer.write("Name,Breed,Type,Condition,Age,Price,Weight");
+                writer.newLine();
+                
+                for (Horse horse : selected.getHorseList()) {
+                    writer.write(String.format("%s,%s,%s,%s,%d,%.2f,%.2f",
+                        escapeCSV(horse.getName()),
+                        escapeCSV(horse.getBreed()),
+                        escapeCSV(horse.getType().toString()),
+                        escapeCSV(horse.getCondition().toString()),
+                        horse.getAge(),
+                        horse.getPrice(),
+                        horse.getWeightKg()));
+                    writer.newLine();
+                }
+                
+                showInfo("Success", "Selected stable exported to: " + file.getName());
+            } catch (IOException e) {
+                showError("Export failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void importStablesFromCSV() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Stables from CSV");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            try {
+                csvService.importStablesFromCSV(file.getAbsolutePath());
+                loadStables();
+                showInfo("Success", "Stables imported from: " + file.getName());
+            } catch (IOException e) {
+                showError("Import failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void importHorsesFromCSV() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Horses from CSV");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        
+        File file = fileChooser.showOpenDialog(stage);
+        if (file != null) {
+            try {
+                csvService.importHorsesFromCSV(file.getAbsolutePath());
+                loadStables();
+                loadHorses();
+                showInfo("Success", "Horses imported from: " + file.getName());
+            } catch (IOException e) {
+                showError("Import failed: " + e.getMessage());
+            }
+        }
+    }
+    
+    // Helper method for CSV escaping
+    private String escapeCSV(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
     
     private void showError(String message) {
