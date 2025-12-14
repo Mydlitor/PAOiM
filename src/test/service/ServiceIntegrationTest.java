@@ -46,7 +46,7 @@ class ServiceIntegrationTest {
         // Clean up temporary directory and its contents
         if (tempDir != null && Files.exists(tempDir)) {
             Files.walk(tempDir)
-                .sorted((a, b) -> -a.compareTo(b)) // Delete files before directories
+                .sorted(java.util.Comparator.reverseOrder())
                 .forEach(path -> {
                     try {
                         Files.delete(path);
