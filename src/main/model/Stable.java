@@ -1,13 +1,36 @@
 package model;
 
 import exceptions.*;
+import javax.persistence.*;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Stable {
-  private final String stableName;
-  private final List<Horse> horseList;
-  private final int maxCapacity;
+@Entity
+@Table(name = "stables")
+public class Stable implements Serializable {
+  private static final long serialVersionUID = 1L;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(nullable = false, unique = true)
+  private String stableName;
+
+  @OneToMany(mappedBy = "stable", fetch = FetchType.EAGER, orphanRemoval = true)
+  @Cascade({CascadeType.ALL})
+  private List<Horse> horseList;
+
+  @Column(nullable = false)
+  private int maxCapacity;
+
+  public Stable() {
+    // Default constructor for JPA
+    this.horseList = new ArrayList<>();
+  }
 
   public Stable(String stableName, int maxCapacity) {
     this.stableName = Objects.requireNonNull(stableName);
@@ -15,8 +38,14 @@ public class Stable {
     this.horseList = new ArrayList<>();
   }
 
+  public Long getId() { return id; }
+  public void setId(Long id) { this.id = id; }
+
   public String getStableName() { return stableName; }
+  public void setStableName(String stableName) { this.stableName = stableName; }
+  
   public int getMaxCapacity() { return maxCapacity; }
+  public void setMaxCapacity(int maxCapacity) { this.maxCapacity = maxCapacity; }
   public List<Horse> getHorseList() { return Collections.unmodifiableList(horseList); }
 
   public void addHorse(Horse horse) throws DuplicateHorseException, StableCapacityException {
@@ -27,12 +56,14 @@ public class Stable {
       throw new StableCapacityException(stableName, maxCapacity);
     }
     horseList.add(horse);
+    horse.setStable(this);
   }
 
   public void removeHorse(Horse horse) throws HorseNotFoundException {
     if (!horseList.remove(horse)) {
       throw new HorseNotFoundException(horse.getName());
     }
+    horse.setStable(null);
   }
 
   public void sickHorse(Horse horse) throws HorseNotFoundException {
@@ -42,6 +73,7 @@ public class Stable {
     }
     horseList.get(idx).setCondition(HorseCondition.SICK);
     horseList.remove(idx);
+    horse.setStable(null);
   }
 
   public void changeCondition(Horse horse, HorseCondition condition) throws HorseNotFoundException {

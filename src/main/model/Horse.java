@@ -1,16 +1,52 @@
 package model;
 
+import javax.persistence.*;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 
-public class Horse implements Comparable<Horse> {
-  private final String name;
-  private final String breed;
+@Entity
+@Table(name = "horses")
+public class Horse implements Comparable<Horse>, Serializable {
+  private static final long serialVersionUID = 1L;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(nullable = false)
+  private String name;
+
+  @Column(nullable = false)
+  private String breed;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   private HorseType type;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   private HorseCondition condition;
+
+  @Column(nullable = false)
   private int age;
+
+  @Column(nullable = false)
   private double price;
+
+  @Column(nullable = false)
   private double weightKg;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "stable_id")
+  @Cascade(CascadeType.SAVE_UPDATE)
+  private Stable stable;
+
+  public Horse() {
+    // Default constructor for JPA
+  }
 
   public Horse(String name, String breed, HorseType type, HorseCondition condition, int age, double price, double weightKg) {
     this.name = Objects.requireNonNull(name);
@@ -22,8 +58,17 @@ public class Horse implements Comparable<Horse> {
     this.weightKg = weightKg;
   }
 
+  public Long getId() { return id; }
+  public void setId(Long id) { this.id = id; }
+  
+  public Stable getStable() { return stable; }
+  public void setStable(Stable stable) { this.stable = stable; }
+
   public String getName() { return name; }
+  public void setName(String name) { this.name = name; }
+  
   public String getBreed() { return breed; }
+  public void setBreed(String breed) { this.breed = breed; }
   public HorseType getType() { return type; }
   public void setType(HorseType type) { this.type = type; }
   public HorseCondition getCondition() { return condition; }
