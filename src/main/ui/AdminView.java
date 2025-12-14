@@ -15,7 +15,9 @@ import model.*;
 import service.CSVService;
 import service.SerializationService;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -639,12 +641,16 @@ public class AdminView {
                 loadStables();
                 
                 // Show result with details
-                String message = String.format("Loaded %d stables from: %s", successCount, file.getName());
                 if (failCount > 0) {
-                    message += String.format("\n%d stables failed to load:%s", failCount, errors.toString());
-                    showError(message);
+                    String message = String.format("Loaded %d stables, %d failed from: %s%s", 
+                                                    successCount, failCount, file.getName(), errors.toString());
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Partial Success");
+                    alert.setHeaderText(null);
+                    alert.setContentText(message);
+                    alert.showAndWait();
                 } else {
-                    showInfo("Success", message);
+                    showInfo("Success", String.format("Loaded %d stables from: %s", successCount, file.getName()));
                 }
             } catch (IOException | ClassNotFoundException e) {
                 showError("Load failed: " + e.getMessage());
@@ -709,7 +715,7 @@ public class AdminView {
         
         File file = fileChooser.showSaveDialog(stage);
         if (file != null) {
-            try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(file))) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 writer.write("Stable Information");
                 writer.newLine();
                 writer.write("Name," + escapeCSV(selected.getStableName()));
