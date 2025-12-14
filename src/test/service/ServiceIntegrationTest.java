@@ -12,6 +12,8 @@ import util.TestDatabaseUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.Map;
 
@@ -24,9 +26,10 @@ class ServiceIntegrationTest {
     private StableDAO stableDAO;
     private HorseDAO horseDAO;
     private RatingDAO ratingDAO;
+    private Path tempDir;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         TestDatabaseUtil.clearDatabase();
         serializationService = new SerializationService();
         csvService = new CSVService();
@@ -34,12 +37,30 @@ class ServiceIntegrationTest {
         stableDAO = new StableDAOImpl();
         horseDAO = new HorseDAOImpl();
         ratingDAO = new RatingDAOImpl();
+        // Create a temporary directory for test files
+        tempDir = Files.createTempDirectory("stable-manager-test");
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        // Clean up temporary directory and its contents
+        if (tempDir != null && Files.exists(tempDir)) {
+            Files.walk(tempDir)
+                .sorted(java.util.Comparator.reverseOrder())
+                .forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        // Ignore cleanup errors
+                    }
+                });
+        }
     }
 
     @Test
     @DisplayName("Test serialization and deserialization of Stable")
     void testStableSerialization() throws IOException, ClassNotFoundException {
-        String filename = "/tmp/test_stable.ser";
+        String filename = tempDir.resolve("test_stable.ser").toString();
         
         Stable stable = new Stable("Test Stable", 10);
         Horse horse = new Horse("Test Horse", "Arabian", HorseType.HOT_BLOODED, 
@@ -57,14 +78,12 @@ class ServiceIntegrationTest {
         assertEquals("Test Stable", loaded.getStableName());
         assertEquals(10, loaded.getMaxCapacity());
         assertEquals(1, loaded.getHorseList().size());
-        
-        new File(filename).delete();
     }
 
     @Test
     @DisplayName("Test serialization and deserialization of Horse")
     void testHorseSerialization() throws IOException, ClassNotFoundException {
-        String filename = "/tmp/test_horse.ser";
+        String filename = tempDir.resolve("test_horse.ser").toString();
         
         Horse horse = new Horse("Test Horse", "Arabian", HorseType.HOT_BLOODED, 
                                 HorseCondition.HEALTHY, 5, 10000.0, 400.0);
@@ -76,14 +95,12 @@ class ServiceIntegrationTest {
         assertEquals("Test Horse", loaded.getName());
         assertEquals("Arabian", loaded.getBreed());
         assertEquals(HorseType.HOT_BLOODED, loaded.getType());
-        
-        new File(filename).delete();
     }
 
     @Test
     @DisplayName("Test CSV export for stables")
     void testStableCSVExport() throws Exception {
-        String filename = "/tmp/test_stables.csv";
+        String filename = tempDir.resolve("test_stables.csv").toString();
         
         // Create test data
         Stable stable1 = new Stable("Stable1", 10);
@@ -98,14 +115,12 @@ class ServiceIntegrationTest {
         File csvFile = new File(filename);
         assertTrue(csvFile.exists());
         assertTrue(csvFile.length() > 0);
-        
-        new File(filename).delete();
     }
 
     @Test
     @DisplayName("Test CSV export for horses")
     void testHorseCSVExport() throws Exception {
-        String filename = "/tmp/test_horses.csv";
+        String filename = tempDir.resolve("test_horses.csv").toString();
         
         // Create test data
         Stable stable = new Stable("Test Stable", 10);
@@ -123,8 +138,6 @@ class ServiceIntegrationTest {
         File csvFile = new File(filename);
         assertTrue(csvFile.exists());
         assertTrue(csvFile.length() > 0);
-        
-        new File(filename).delete();
     }
 
     @Test
