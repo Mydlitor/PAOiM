@@ -42,10 +42,10 @@ public class Stable implements Serializable {
   public void setId(Long id) { this.id = id; }
 
   public String getStableName() { return stableName; }
-  public void setStableName(String stableName) { this.stableName = stableName; }
+  protected void setStableName(String stableName) { this.stableName = stableName; }
   
   public int getMaxCapacity() { return maxCapacity; }
-  public void setMaxCapacity(int maxCapacity) { this.maxCapacity = maxCapacity; }
+  protected void setMaxCapacity(int maxCapacity) { this.maxCapacity = maxCapacity; }
   public List<Horse> getHorseList() { return Collections.unmodifiableList(horseList); }
 
   public void addHorse(Horse horse) throws DuplicateHorseException, StableCapacityException {

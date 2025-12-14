@@ -65,10 +65,10 @@ public class Horse implements Comparable<Horse>, Serializable {
   public void setStable(Stable stable) { this.stable = stable; }
 
   public String getName() { return name; }
-  public void setName(String name) { this.name = name; }
+  protected void setName(String name) { this.name = name; }
   
   public String getBreed() { return breed; }
-  public void setBreed(String breed) { this.breed = breed; }
+  protected void setBreed(String breed) { this.breed = breed; }
   public HorseType getType() { return type; }
   public void setType(HorseType type) { this.type = type; }
   public HorseCondition getCondition() { return condition; }

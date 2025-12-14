@@ -2,6 +2,7 @@ package util;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import util.HibernateUtil;
 
 public class TestDatabaseUtil {
     
